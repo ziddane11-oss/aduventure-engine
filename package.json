@@ -1,0 +1,11 @@
+{
+  "name": "aduventure-engine",
+  "version": "0.1.0-alpha.1",
+  "description": "어두밴처 엔진 알파 1 — AI 호출 없이 node만으로 완주되는 텍스트 어드벤처 엔진",
+  "type": "module",
+  "scripts": {
+    "test": "node test-run.mjs"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

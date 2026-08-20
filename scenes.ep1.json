@@ -1,0 +1,115 @@
+{
+  "episode": "ep1",
+  "start": "harbor_entrance",
+  "nodes": [
+    {
+      "id": "harbor_entrance",
+      "beat": "intro",
+      "must_mention": ["안개 낀 항구", "꺼져 가는 가로등", "낯선 뱃고동 소리"],
+      "choices": [
+        {
+          "id": "c_enter_market",
+          "label_hint": "불빛이 새어 나오는 안개 시장으로 들어간다",
+          "require": null,
+          "effects": [
+            { "op": "set", "path": "flags.visited_market", "value": true },
+            { "op": "goto", "scene": "mist_market" }
+          ]
+        },
+        {
+          "id": "c_climb_lighthouse",
+          "label_hint": "버려진 등대의 녹슨 계단을 오른다",
+          "require": null,
+          "effects": [
+            { "op": "add", "path": "stats.hp", "value": -1 },
+            { "op": "goto", "scene": "old_lighthouse" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mist_market",
+      "beat": "branch_market",
+      "must_mention": ["기름 램프 좌판", "얼굴을 가린 상인", "생선 비린내"],
+      "choices": [
+        {
+          "id": "c_buy_lantern",
+          "label_hint": "문양이 새겨진 낡은 랜턴을 산다",
+          "require": null,
+          "effects": [
+            { "op": "push", "path": "clues", "value": "lantern_sigil" },
+            { "op": "set", "path": "flags.has_lantern", "value": true },
+            { "op": "goto", "scene": "fog_pier" }
+          ]
+        },
+        {
+          "id": "c_ask_merchant",
+          "label_hint": "상인에게 사라진 배에 대해 묻는다",
+          "require": null,
+          "effects": [
+            { "op": "add", "path": "trust.merchant", "value": 1 },
+            { "op": "push", "path": "clues", "value": "missing_ship_rumor" },
+            { "op": "goto", "scene": "fog_pier" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "old_lighthouse",
+      "beat": "branch_lighthouse",
+      "must_mention": ["깨진 렌즈", "등대지기의 일지", "바람에 흔들리는 난간"],
+      "choices": [
+        {
+          "id": "c_read_logbook",
+          "label_hint": "등대지기의 일지를 읽는다",
+          "require": null,
+          "effects": [
+            { "op": "push", "path": "clues", "value": "keeper_log" },
+            { "op": "goto", "scene": "fog_pier" }
+          ]
+        },
+        {
+          "id": "c_light_signal",
+          "label_hint": "남은 기름으로 신호를 밝힌다",
+          "require": { "path": "stats.hp", "gte": 5 },
+          "effects": [
+            { "op": "set", "path": "flags.signal_lit", "value": true },
+            { "op": "add", "path": "trust.harbor_folk", "value": 1 },
+            { "op": "goto", "scene": "fog_pier" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fog_pier",
+      "beat": "converge",
+      "must_mention": ["부두 끝의 검은 배", "물결에 비친 랜턴 불빛", "짙어지는 안개"],
+      "choices": [
+        {
+          "id": "c_board_ship",
+          "label_hint": "랜턴 문양을 내보이며 검은 배에 오른다",
+          "require": { "path": "clues", "has": "lantern_sigil" },
+          "effects": [
+            { "op": "set", "path": "flags.boarded_ship", "value": true },
+            { "op": "goto", "scene": "ending_dawn" }
+          ]
+        },
+        {
+          "id": "c_wait_for_dawn",
+          "label_hint": "부두에 남아 새벽을 기다린다",
+          "require": null,
+          "effects": [
+            { "op": "set", "path": "flags.waited_dawn", "value": true },
+            { "op": "goto", "scene": "ending_dawn" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ending_dawn",
+      "beat": "ending",
+      "must_mention": ["수평선의 첫 햇살", "걷히는 안개", "다음 이야기의 예감"],
+      "choices": []
+    }
+  ]
+}
