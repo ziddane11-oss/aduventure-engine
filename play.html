@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>어두밴처 — ep1 안개 낀 항구</title>
+<style>
+  :root {
+    --bg: #101418;
+    --panel: #1a2129;
+    --text: #dde5ec;
+    --dim: #8a97a5;
+    --accent: #6fb3d8;
+    --accent-press: #4d8fb5;
+    --border: #2b3540;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); }
+  body {
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+  }
+  #app {
+    width: 100%;
+    max-width: 560px;
+    padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  header h1 { font-size: 20px; letter-spacing: 0.06em; color: var(--accent); }
+  header p { font-size: 14px; color: var(--dim); }
+  #beat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 16px;
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+  #choices { display: flex; flex-direction: column; gap: 10px; }
+  #choices button {
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 16px;
+    line-height: 1.5;
+    text-align: left;
+    word-break: keep-all;
+    color: var(--text);
+    background: #202a34;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  #choices button:active { background: var(--accent-press); color: #0d1216; }
+  #choices button.restart { text-align: center; font-weight: 700; }
+  .ending-mark { text-align: center; color: var(--dim); font-size: 14px; letter-spacing: 0.4em; }
+  #error {
+    display: none;
+    background: #3a2226;
+    border: 1px solid #7a3b44;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 15px;
+  }
+  details {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--dim);
+  }
+  details summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  details pre {
+    padding: 0 16px 14px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>어두밴처</h1>
+    <p>ep1 · 안개 낀 항구 — 저장 없음, 새로고침하면 처음부터</p>
+  </header>
+  <div id="error"></div>
+  <div id="beat"></div>
+  <div id="choices"></div>
+  <details id="debug">
+    <summary>디버그 패널</summary>
+    <pre id="debug-body"></pre>
+  </details>
+</div>
+
+<script type="module">
+  // 엔진은 engine.mjs를 그대로 import한다 (로직 중복 구현 금지).
+  // GitHub Pages는 .mjs를 text/javascript로 서빙하므로 모듈 import가 동작한다.
+  // 만약 다른 호스팅에서 .mjs MIME 문제로 import가 실패하면, 이 import를 지우고
+  // engine.mjs 내용을 이 <script> 안에 인라인하는 폴백으로 교체할 것.
+  import { checkRequire, applyEffects, createInitialState } from "./engine.mjs";
+
+  const $beat = document.getElementById("beat");
+  const $choices = document.getElementById("choices");
+  const $debug = document.getElementById("debug-body");
+  const $error = document.getElementById("error");
+
+  let scenario = null;
+  let nodesById = null;
+  let state = null;
+
+  function render() {
+    const node = nodesById.get(state.scene);
+    if (!node) {
+      showError(`씬 '${state.scene}'이 시나리오에 없습니다.`);
+      return;
+    }
+    $beat.textContent = node.beat;
+    $choices.replaceChildren();
+
+    if (node.choices.length === 0) {
+      // 엔딩 화면
+      const mark = document.createElement("p");
+      mark.className = "ending-mark";
+      mark.textContent = "— 끝 —";
+      const restart = document.createElement("button");
+      restart.className = "restart";
+      restart.textContent = "처음부터";
+      restart.addEventListener("click", () => {
+        state = createInitialState(scenario.start);
+        render();
+        window.scrollTo(0, 0);
+      });
+      $choices.append(mark, restart);
+    } else {
+      // require를 충족하는 선택지만 버튼으로
+      for (const choice of node.choices) {
+        if (!checkRequire(state, choice.require)) continue;
+        const btn = document.createElement("button");
+        btn.textContent = choice.label_hint;
+        btn.addEventListener("click", () => {
+          state = applyEffects(state, choice.effects);
+          render();
+          window.scrollTo(0, 0);
+        });
+        $choices.append(btn);
+      }
+    }
+
+    $debug.textContent = JSON.stringify(
+      { scene: state.scene, turn: state.turn, hp: state.stats.hp,
+        flags: state.flags, clues: state.clues, trust: state.trust },
+      null, 2,
+    );
+  }
+
+  function showError(msg) {
+    $error.style.display = "block";
+    $error.textContent = msg;
+  }
+
+  try {
+    const res = await fetch("./scenes.ep1.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    scenario = await res.json();
+    nodesById = new Map(scenario.nodes.map((n) => [n.id, n]));
+    state = createInitialState(scenario.start);
+    render();
+  } catch (err) {
+    showError(
+      "시나리오를 불러오지 못했습니다: " + err.message +
+      "\n(file://로 직접 열면 fetch가 막힙니다. GitHub Pages나 " +
+      "로컬 서버(npx serve 등)로 열어 주세요.)",
+    );
+  }
+</script>
+</body>
+</html>

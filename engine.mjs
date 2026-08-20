@@ -112,7 +112,7 @@ export function applyEffects(state, effects) {
 /** 초기 GameState 생성. */
 export function createInitialState(startScene) {
   return {
-    version: "alpha-1",
+    version: 1,
     scene: startScene,
     turn: 0,
     stats: { hp: 10 },

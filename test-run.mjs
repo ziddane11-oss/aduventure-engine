@@ -31,6 +31,7 @@ function assert(cond, msg) {
 console.log("== 0. 엔진 순수성 검사 ==");
 {
   const s0 = createInitialState(scenario.start);
+  assert(s0.version === 1, "state.version은 숫자 1이다 (SPEC-v1.1)");
   const frozen = JSON.stringify(s0);
   const s1 = applyEffects(s0, [
     { op: "set", path: "flags.x", value: true },
@@ -129,7 +130,7 @@ console.log("\n== b-2. 도달 불가 씬 검사 ==");
 
 // ---------------------------------------------------------------
 // b-3) 동적 검사: require/effects를 실제 적용한 상태 공간 탐색으로
-//      엔딩(beat=ending, choices 없음) 도달 경로 ≥ 1
+//      엔딩(tag=ending, choices 없음) 도달 경로 ≥ 1
 // ---------------------------------------------------------------
 console.log("\n== b-3. 엔딩 도달 경로 검사 ==");
 {
@@ -139,7 +140,7 @@ console.log("\n== b-3. 엔딩 도달 경로 검사 ==");
     if (depth > MAX_DEPTH) return;
     const node = nodesById.get(state.scene);
     if (!node) return;
-    if (node.beat === "ending" && node.choices.length === 0) {
+    if (node.tag === "ending" && node.choices.length === 0) {
       endingPaths.push([...path, state.scene]);
       return;
     }
